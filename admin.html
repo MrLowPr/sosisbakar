@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - SosisBakar.net</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌭</text></svg>">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="logo">🌭 SosisBakar.net</div>
+      <button class="side-link active" data-tab="dashboard" onclick="showTab('dashboard')">📊 Dashboard</button>
+      <button class="side-link" data-tab="orders" onclick="showTab('orders')">📦 Pesanan</button>
+      <button class="side-link" data-tab="products" onclick="showTab('products')">🌭 Produk</button>
+      <button class="side-link" data-tab="categories" onclick="showTab('categories')">📁 Kategori</button>
+      <button class="side-link" data-tab="settings" onclick="showTab('settings')">⚙️ Pengaturan</button>
+      <button class="side-link" data-tab="track" onclick="showTab('track')">🔍 Lacak</button>
+      <hr style="border-color:#3a3a3a;margin:14px 0;">
+      <button class="side-link" onclick="logout()">🚪 Keluar</button>
+      <a class="side-link" href="index.html">🌐 Lihat Website</a>
+    </aside>
+
+    <main class="admin-main">
+      <!-- Dashboard -->
+      <div id="tab-dashboard" class="tab-content">
+        <div class="admin-header"><h1>📊 Dashboard</h1><span id="dashGreeting" style="color:var(--muted);font-size:.9rem;"></span></div>
+        <div class="stat-cards" id="statCards"></div>
+        <div class="admin-card">
+          <h3>📦 Pesanan Terbaru</h3>
+          <div id="dashRecentOrders"></div>
+        </div>
+      </div>
+
+      <!-- Orders -->
+      <div id="tab-orders" class="tab-content" style="display:none;">
+        <div class="admin-header"><h1>📦 Manajemen Pesanan</h1>
+          <div style="display:flex;gap:10px;">
+            <select class="select-sm" id="orderFilter" onchange="loadOrders()">
+              <option value="">Semua Status</option>
+              <option value="new">🆕 Baru</option>
+              <option value="processing">👨‍🍳 Diproses</option>
+              <option value="done">✅ Selesai</option>
+              <option value="cancelled">❌ Batal</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-card">
+          <table class="data-table">
+            <thead><tr><th>Kode</th><th>Pelanggan</th><th>Items</th><th>Total</th><th>Status</th><th>Pembayaran</th><th>Aksi</th></tr></thead>
+            <tbody id="ordersTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Products -->
+      <div id="tab-products" class="tab-content" style="display:none;">
+        <div class="admin-header"><h1>🌭 Kelola Produk</h1>
+          <button class="btn btn-primary" onclick="openProductModal()">+ Tambah Produk</button>
+        </div>
+        <div class="admin-card">
+          <table class="data-table">
+            <thead><tr><th>Nama</th><th>Kategori</th><th>Harga</th><th>Harga Lama</th><th>Varian</th><th>Tersedia</th><th>Aksi</th></tr></thead>
+            <tbody id="productsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div id="tab-categories" class="tab-content" style="display:none;">
+        <div class="admin-header"><h1>📁 Kelola Kategori</h1>
+          <button class="btn btn-primary" onclick="openCategoryModal()">+ Tambah Kategori</button>
+        </div>
+        <div class="admin-card">
+          <table class="data-table">
+            <thead><tr><th>Nama</th><th>Slug</th><th>Aksi</th></tr></thead>
+            <tbody id="categoriesTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div id="tab-settings" class="tab-content" style="display:none;">
+        <div class="admin-header"><h1>⚙️ Pengaturan Toko</h1></div>
+        <div class="admin-card" style="max-width:640px;">
+          <div class="form-group">
+            <label>Nama Toko</label>
+            <input type="text" id="set_store_name">
+          </div>
+          <div class="form-group">
+            <label>Tagline</label>
+            <input type="text" id="set_tagline">
+          </div>
+          <div class="form-group">
+            <label>Nomor WhatsApp (format internasional, tanpa +)</label>
+            <input type="text" id="set_whatsapp_number">
+          </div>
+          <div class="form-group">
+            <label>URL Gambar QRIS</label>
+            <input type="text" id="set_qris_image" placeholder="https://... atau upload di bawah">
+          </div>
+          <div class="form-group">
+            <label>Upload Gambar QRIS</label>
+            <input type="file" id="qrisUpload" accept="image/*" style="padding:8px;">
+          </div>
+          <div class="form-group">
+            <label>Alamat Toko</label>
+            <input type="text" id="set_address">
+          </div>
+          <div class="form-group">
+            <label>Instagram URL</label>
+            <input type="text" id="set_instagram">
+          </div>
+          <div class="form-group">
+            <label>TikTok URL</label>
+            <input type="text" id="set_tiktok">
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">💾 Simpan Pengaturan</button>
+        </div>
+      </div>
+
+      <!-- Track -->
+      <div id="tab-track" class="tab-content" style="display:none;">
+        <div class="admin-header"><h1>🔍 Lacak Pesanan</h1></div>
+        <div class="admin-card" style="max-width:640px;">
+          <div class="form-group">
+            <label>Kode Pesanan</label>
+            <div style="display:flex;gap:10px;">
+              <input type="text" id="adminTrackCode" placeholder="Masukkan kode pesanan" style="flex:1;">
+              <button class="btn btn-primary" onclick="adminTrack()">Cari</button>
+            </div>
+          </div>
+          <div id="adminTrackResult"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="productModal" onclick="if(event.target===this)closeProductModal()">
+    <div class="modal">
+      <button class="modal-close" onclick="closeProductModal()">×</button>
+      <h3 id="productModalTitle">➕ Tambah Produk</h3>
+      <p class="modal-sub">Lengkapi detail produk di bawah.</p>
+      <input type="hidden" id="p_id">
+      <div class="form-group"><label>Nama Produk *</label><input type="text" id="p_name"></div>
+      <div class="form-group"><label>Slug *</label><input type="text" id="p_slug" placeholder="nama-produk-kebab-case"><small style="color:var(--muted);font-size:.75rem;">Kalau dikosongkan, dibuat otomatis dari nama.</small></div>
+      <div class="form-group"><label>Kategori</label><select id="p_category"></select></div>
+      <div class="form-group"><label>Deskripsi</label><textarea id="p_description"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Harga (Rp) *</label><input type="number" id="p_price" min="0"></div>
+        <div class="form-group"><label>Harga Lama (coret)</label><input type="number" id="p_old_price" min="0"></div>
+      </div>
+      <div class="form-group"><label>Varian</label><input type="text" id="p_variant" placeholder="Pedas / Tidak Pedas"></div>
+      <div class="form-group"><label>URL Gambar</label><input type="text" id="p_image_url" placeholder="https://... (opsional)"></div>
+      <div class="form-group"><label class="checkbox-row"><input type="checkbox" id="p_available" checked> Produk tersedia</label></div>
+      <button class="btn btn-primary btn-block" onclick="saveProduct()">💾 Simpan</button>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div class="modal-overlay" id="categoryModal" onclick="if(event.target===this)closeCategoryModal()">
+    <div class="modal" style="max-width:420px;">
+      <button class="modal-close" onclick="closeCategoryModal()">×</button>
+      <h3>📁 Tambah Kategori</h3>
+      <div class="form-group"><label>Nama Kategori</label><input type="text" id="cat_name" placeholder="Contoh: Minuman"></div>
+      <div class="form-group"><label>Slug</label><input type="text" id="cat_slug" placeholder="minuman"><small style="color:var(--muted);font-size:.75rem;">Kalau dikosongkan, dibuat otomatis.</small></div>
+      <button class="btn btn-primary btn-block" onclick="saveCategory()">💾 Simpan</button>
+    </div>
+  </div>
+
+  <!-- Order Detail Modal -->
+  <div class="modal-overlay" id="orderDetailModal" onclick="if(event.target===this)closeOrderModal()">
+    <div class="modal" style="max-width:600px;">
+      <button class="modal-close" onclick="closeOrderModal()">×</button>
+      <h3>📦 Detail Pesanan</h3>
+      <div id="orderDetailBody"></div>
+    </div>
+  </div>
+
+  <script>window.BACKEND_URL='https://slope-protocol-onion-casual.trycloudflare.com';</script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

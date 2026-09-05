@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lacak Pesanan - SosisBakar.net</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌭</text></svg>">
+</head>
+<body style="background:var(--cream);min-height:100vh;">
+  <nav class="navbar">
+    <div class="container">
+      <a class="logo" href="index.html"><span class="logo-icon">🌭</span> SosisBakar.net</a>
+      <a class="btn btn-outline btn-sm" href="index.html">← Beranda</a>
+    </div>
+  </nav>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag">LACAK PESANAN</span>
+        <h2>📦 Cek Status Pesananmu</h2>
+        <p>Masukkan kode pesanan yang didapat saat checkout.</p>
+      </div>
+      <div class="track-box">
+        <div class="form-group">
+          <label>Kode Pesanan</label>
+          <div style="display:flex;gap:10px;">
+            <input type="text" id="orderCode" placeholder="Contoh: 202609051234" style="flex:1;">
+            <button class="btn btn-primary" onclick="trackOrder()">Cari</button>
+          </div>
+        </div>
+        <div id="result" style="margin-top:20px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <script>window.BACKEND_URL='https://slope-protocol-onion-casual.trycloudflare.com';</script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const STATUS_LABEL = { new: '🆕 Pesanan Baru', processing: '👨‍🍳 Sedang Dibuat', done: '✅ Selesai & Dikirim', cancelled: '❌ Dibatalkan' };
+    const PM_STATUS = { pending: '⏳ Menunggu Pembayaran', paid: '💳 Sudah Dibayar', confirmed: '✅ Pembayaran Dikonfirmasi' };
+
+    async function trackOrder() {
+      const code = document.getElementById('orderCode').value.trim();
+      const result = document.getElementById('result');
+      if (!code) { showToast('Masukkan kode pesanan', 'warn'); return; }
+      result.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">Mencari...</div>';
+      try {
+        const order = await API.get('/orders/track/' + encodeURIComponent(code));
+        const items = (Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]'))
+          .map(i => `<div class="track-item"><span>${i.quantity}x ${i.name} ${i.note ? '(' + i.note + ')' : ''}</span><span><strong>${fmtRupiah(i.price * i.quantity)}</strong></span></div>`).join('');
+        result.innerHTML = `
+          <div style="text-align:center;margin-bottom:18px;">
+            <div class="track-status st-${order.order_status}">${STATUS_LABEL[order.order_status] || order.order_status}</div>
+            <div class="track-status st-${order.payment_status}" style="margin-top:8px;">${PM_STATUS[order.payment_status] || order.payment_status}</div>
+          </div>
+          <div style="font-size:.88rem;color:var(--muted);margin-bottom:10px;">Pesanan: <strong style="color:var(--primary);">${order.order_code}</strong> · ${new Date(order.created_at).toLocaleString('id-ID')}</div>
+          ${items}
+          <div class="track-item"><span>Ongkir</span><span>${fmtRupiah(order.shipping_cost)}</span></div>
+          <div class="track-item" style="font-weight:800;border-bottom:none;color:var(--dark);"><span>Total</span><span>${fmtRupiah(order.total)}</span></div>
+          <div style="text-align:center;margin-top:18px;padding-top:16px;border-top:1px dashed #ddd;">
+            <a class="btn btn-whatsapp" target="_blank" href="https://wa.me/6281234567890?text=Halo, saya mau tanya status pesanan ${order.order_code}">💬 Tanya via WhatsApp</a>
+          </div>`;
+      } catch (err) {
+        result.innerHTML = `<div style="text-align:center;color:var(--primary);padding:20px;">${err.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
