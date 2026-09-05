@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pesanan Saya - SosisBakar.net</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌭</text></svg>">
+</head>
+<body style="background:var(--cream);min-height:100vh;">
+  <nav class="navbar">
+    <div class="container">
+      <a class="logo" href="index.html"><span class="logo-icon">🌭</span> SosisBakar.net</a>
+      <div class="nav-actions">
+        <a class="btn btn-outline btn-sm" href="index.html">← Belanja Lagi</a>
+        <a class="btn btn-dark btn-sm" href="javascript:logout()">Keluar</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag">PESANAN SAYA</span>
+        <h2>📦 Riwayat Pesananmu</h2>
+      </div>
+      <div id="ordersList" style="max-width:680px;margin:0 auto;">
+        <div style="text-align:center;color:var(--muted);padding:40px;">Memuat...</div>
+      </div>
+    </div>
+  </section>
+
+  <script>window.BACKEND_URL='http://localhost:3000';</script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const STATUS_LABEL = { new: '🆕 Baru', processing: '👨‍🍳 Dibuat', done: '✅ Selesai', cancelled: '❌ Batal' };
+    const PM_STATUS = { pending: '⏳ Belum Bayar', paid: '💳 Dibayar', confirmed: '✅ Dikonfirmasi' };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = getSession();
+      if (!user) { window.location.href = 'login.html'; return; }
+      try {
+        const res = await API.get('/orders/my');
+        const list = document.getElementById('ordersList');
+        if (!res.orders.length) {
+          list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px;">Belum ada pesanan.<br><a href="index.html" style="color:var(--primary);font-weight:700;">Yuk pesan sekarang →</a></div>`;
+          return;
+        }
+        list.innerHTML = res.orders.map(o => {
+          const items = (Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]'))
+            .map(i => `${i.quantity}x ${i.name}`).join(', ');
+          return `
+          <div class="admin-card" style="max-width:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+              <strong style="color:var(--primary);">${o.order_code}</strong>
+              <div>
+                <span class="track-status st-${o.order_status}">${STATUS_LABEL[o.order_status] || o.order_status}</span>
+                <span class="track-status st-${o.payment_status}">${PM_STATUS[o.payment_status] || o.payment_status}</span>
+              </div>
+            </div>
+            <div style="font-size:.88rem;color:var(--muted);margin-bottom:6px;">${items}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:.8rem;color:var(--muted);">${new Date(o.created_at).toLocaleString('id-ID')}</span>
+              <strong style="color:var(--dark);">${fmtRupiah(o.total)}</strong>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

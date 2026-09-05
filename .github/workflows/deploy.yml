@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Inject backend URL
+        run: |
+          if [ -n "${{ vars.BACKEND_URL }}" ]; then
+            find public/ -type f \( -name '*.html' -o -name 'config.js' \) -exec \
+              sed -i "s#http://localhost:3000#${{ vars.BACKEND_URL }}#g" {} +
+          fi
+          mkdir -p _site
+          cp -r public/* _site/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Commit built site to gh-pages (fallback)
+        run: |
+          git branch -D gh-pages 2>/dev/null || true
+          git checkout --orphan gh-pages
+          cp -r _site/* .
+          rm -rf _site
+          echo "*.log" > .gitignore
+          echo "node_modules/" >> .gitignore
+          git add -A
+          git -c user.name="gh-actions" -c user.email="actions@github.com" commit -m "Deploy site $(date +'%Y-%m-%d %H:%M')" || true
+          git push origin gh-pages --force
+          git checkout main
