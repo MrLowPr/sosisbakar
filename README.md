@@ -66,37 +66,33 @@ Buka `http://localhost:3000` untuk landing page.
 
 ## Deploy ke GitHub Pages
 
-1. Buat repo GitHub (mis. `sosisbakar` atau `<username>.github.io`).
-2. Tambahkan remote:
-   ```bash
-   git remote add origin git@github.com:MrLowPr/sosisbakar.git
-   ```
-   *Ganti dengan username/repo Anda.*
-3. Push:
+1. Repo sudah dibuat: `https://github.com/MrLowPr/sosisbakar`
+2. Remote sudah di-set. Setiap mau update situs tinggal:
    ```bash
    ./deploy.sh
    ```
-4. Situs live di `https://<username>.github.io/<repo>/` (cek Settings → Pages, pilih source: **GitHub Actions**).
+3. Situs live di `https://mrlowpr.github.io/sosisbakar/` (branch `gh-pages`)
 
-Setiap `git push` ke `main` otomatis memicu GitHub Actions → build `public/` → deploy ke Pages.
+`deploy.sh` otomatis: sync kode ke `main`, lalu bangun `public/` → push ke `gh-pages`. Aman (pakai git worktree terisolasi, tidak menghapus file lokal).
+
+> Alternatif auto-deploy via GitHub Actions: lihat `docs/deploy.yml.example` — butuh scope `workflow` pada token (`gh auth refresh -h github.com -s workflow`) lalu pindahkan ke `.github/workflows/`.
 
 ## Production: Hubungkan Website ke Backend Lokal
 
 Backend komputer lokal tidak dapat diakses publik secara langsung. Solusi: Cloudflare Tunnel.
 
-1. Jalankan semuanya:
-   ```bash
-   ./start-production.sh
-   ```
-   Ini menjalankan backend di port 3000 dan membuka tunnel. Akan muncul URL seperti `https://xxxx.trycloudflare.com`.
+```bash
+./start-production.sh
+```
 
-2. Set URL tunnel itu sebagai variabel `BACKEND_URL` di GitHub:
-   - Repo → **Settings → Secrets and variables → Actions → Variables → New**
-   - Name: `BACKEND_URL`, Value: `https://xxxx.trycloudflare.com`
+Script ini otomatis:
+1. Menjalankan backend di port 3000.
+2. Membuka Cloudflare Tunnel.
+3. Mendeteksi URL tunnel (contoh `https://xxxx.trycloudflare.com`).
+4. Meng-update `public/js/config.js` + semua HTML ke URL tersebut.
+5. Menjalankan `./deploy.sh` → situs online.
 
-3. Push lagi / jalankan workflow. HTML & config otomatis diisi URL tunnel tersebut.
-
-> Catatan: URL quick-tunnel berubah tiap restart. Untuk URL permanen, gunakan named tunnel dengan domain Anda di Cloudflare (lihat `docs/tunnel-permanen.md`).
+> ⚠️ Quick-tunnel (trycloudflare.com) URL-nya berubah setiap restart. Untuk URL permanen, gunakan named tunnel + domain Anda di Cloudflare. Selama proses tunnel hidup, URL tetap sama.
 
 ## Database di DBeaver
 
